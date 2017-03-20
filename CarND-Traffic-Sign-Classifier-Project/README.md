@@ -24,11 +24,11 @@ Submission write up for the Project: CarND-LaneLines-P1
 [image5]: ./ForReport/model_architecture.png "CNN Architecture"
 [image6]: ./ForReport/accuracy_plots.png "Accuracy Plot"
 
-[image7]: ./additional_images/image1_60kmph.jpg "Traffic Sign 1"
-[image8]: ./additional_images/image2_roundabout.jpg "Traffic Sign 2"
-[image9]: ./additional_images/image3_doubleturn.jpg "Traffic Sign 3"
-[image10]: ./additional_images/image4_dangerouscurveright.jpg "Traffic Sign 4"
-[image11]: ./additional_images/image5_gostraightorright.jpg "Traffic Sign 5"
+[image7]: ./additional_images/image1_pedestrian.png "Traffic Sign 1"
+[image8]: ./additional_images/image2_dangerous_curve_to_right.png "Traffic Sign 2"
+[image9]: ./additional_images/image3_slippery_road.png "Traffic Sign 3"
+[image10]: ./additional_images/image4_roadwork.png "Traffic Sign 4"
+[image11]: ./additional_images/image5_turn_right_ahead.png "Traffic Sign 5"
 [image12]: ./ForReport/image_grayscaled.png "Grayscaled traffic signs"
 [image13]: ./ForReport/hist1.png "Histogram for Traffic Sign 1 "
 [image14]: ./ForReport/hist2.png "Histogram for Traffic Sign 2 "
@@ -168,11 +168,11 @@ The final accuracy plots were again visualized with Tensorboard. This thing real
 ![alt text][image6]
 
 * Training Accuracy    : 100%  
-* Validation Accuracy  : 96.9 %
+* Validation Accuracy  : 96.3 %
 
 Finally I was read to see how well this model performs on the test data which had been kept under wraps till now. Like it was mentioned, it is imperative to use the test data only once, so that we get a true representation of how well this model will work in real world.
 
-*Test Accuracy : 96.9%*  Woohooo!
+*Test Accuracy : 94.9%*  Woohooo!
 
 * As described earlier, I iterated over learning rate and batch size
 I initially started out with the LeNet architecture. But I didn't not include the drop out layers.
@@ -189,13 +189,15 @@ Some observations:
 
 Here are five German traffic signs that I found on the web:
 
-![alt text][image7]    ![alt text][image10]
-
-![alt text][image11]  ![alt text][image9]
-
+![alt text][image7]
 ![alt text][image8]
+![alt text][image9]
+![alt text][image10]
+![alt text][image11]
 
-
+* Since I took these directly from the  [wikipage](https://en.wikipedia.org/wiki/Road_signs_in_Germany), the contrast and intensity for all images is well balanced.
+* The images aren't distorted, so the classifier shouldn't have a lot of trouble in identifying the images.
+* The image sizes are also well proportioned, so distortion of images when resizing is not a concern.
 
 #### 2. Discuss the model's predictions on these new traffic signs and compare the results to predicting on the test set. Identify where in your code predictions were made. At a minimum, discuss what the predictions were, the accuracy on these new predictions, and compare the accuracy to the accuracy on the test set (OPTIONAL: Discuss the results in more detail as described in the "Stand Out Suggestions" part of the rubric).
 
@@ -205,17 +207,17 @@ The code for making predictions on my final model is located in the eleventh cel
 
 | Image			        |     Prediction	        					|
 |:---------------------:|:---------------------------------------------:|
-| 60 kmph       		|  20 kmph   									|
+| Pedestrian       		|  Road narrows to right   									|
 | Dangerous curve to the right     			  | Dangerous curve to the right
-| Go straight or right 								|Go straight or right
-| Double curve					    | Double curve											|
-| Roundabout mandatory	      		| Priority road					 				|
+| Roadwork  								| Pedestrians
+| Turn right ahead					    | End of all speed and passing limits											|
+| Slippery road	      		| Slippery road					 				|
 
 
-The model was able to correctly guess 3 of the 5 traffic signs, which gives an accuracy of 60%. This doesn't compare favorably at all to the accuracy on the test set of 96%.
+The model was able to correctly guess 2 of the 5 traffic signs, which gives an accuracy of 40%. This doesn't compare favorably at all to the accuracy on the test set of 96%.
 
 So I looked at the data that was being input to the model closely:
-![!alt text][image12]
+![alt text][image12]
 
 Nothing looks strange here. So I am not sure why the data is getting so confused with the first and last sign. I will have to plot out the images and visualize the activations to get some more insights.
 
@@ -225,8 +227,11 @@ Nothing looks strange here. So I am not sure why the data is getting so confused
 The code for making predictions on my final model is located in the 12th cell of the Ipython notebook.
 
 
-For the first image, the model seems to be really sure (75%) that this is a 20 kmph sign. The 60 kmph is third option and is down at 2 %.  Here are the plots of how the softmax output for the five images looks like.
-![!alt text][image13] " Traffic Sign 1"
+* For the first image, the model seems to be really sure (93%) that this is a Road narrows ahead sign. Pedestrian is a distant second with 5% probability.  
+* For the third image, the prediction is really close for roadwork(52%) and pedestrian (46%). So we might need the ability to distinguish between the two, because both those images are relatively similar.
+
+Here are the plots of how the softmax output for the five images looks like.
+![alt text][image13] " Traffic Sign 1"
 
 ![!alt text][image14] " Traffic Sign 2"
 
