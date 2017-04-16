@@ -39,9 +39,9 @@ Before jumping into the details of the project, I'd like to show what the end re
 
 The main objective was to train a deep neural network to learn from human driving behavior and then automatically steer the vehicle around the track based on the incoming camera image data.
 
-<p align = 'center'>
-  ![alt text][video3]
-</p>
+![alt text][video3]
+
+![alt text](./videos/gif_run3_final.gif "Great Demo run")
 
 I have worked on dynamic system modeling in the past for coming up with physics based equations for various systems. In all those cases, we needed a good understanding of the system dynamics.  Being able to create a highly non linear response purely based on vision information completely blew me away.
 
