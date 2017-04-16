@@ -41,7 +41,6 @@ The main objective was to train a deep neural network to learn from human drivin
 
 ![alt text][video3]
 
-![alt text](./videos/gif_run3_final.gif "Great Demo run")
 
 I have worked on dynamic system modeling in the past for coming up with physics based equations for various systems. In all those cases, we needed a good understanding of the system dynamics.  Being able to create a highly non linear response purely based on vision information completely blew me away.
 
@@ -143,12 +142,8 @@ While I did experiment with different architectures, I have come to the conclusi
 
 - The performance was much better while driving around track one. But still there were a few spots where the vehicle fell off the track. For example:
 
-<p align='center'>
-  ![car going off track][video1]
-</p>
-<p align=center>
+![car going off track][video1]
   Vehicle going off track
-</p>
 
 I am using the following [online utility](http://image.online-convert.com/convert-to-gif) to convert videos to gif:
 
@@ -160,23 +155,18 @@ I am using the following [online utility](http://image.online-convert.com/conver
 
 - At the end of the process, the vehicle is able to drive autonomously around the track without leaving the road.
 - Better performance, but if you notice, as soon as I reached the bridge, the car was vering to the left, and wasn't staying in the center.
-<p align = 'center'>
-  ![alt text][video2]
-</p>
-<p align=center>
-  Slight left bias on the bridge
-</p>
+
+![alt text][video2]
+Slight left bias on the bridge
+
 
 #### 2. Final Model Architecture
 
 While the previous case corrected the behavior as soon as it reached the lane markings, I decided to add some more data for that region. And finally, this is what the performace looks like!
 
-<p align = 'center'>
-  ![alt text][video2]
-</p>
-<p align=center>
+![alt text][video2]
   Beautiful!
-</p>
+
 
 
 The final model architecture looks like this:
