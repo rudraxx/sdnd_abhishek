@@ -31,6 +31,9 @@ I have also added two sections at the bottom:
 [image9]: ./output_images/9_bev_lane_markings.png "BEV Lane Markings"
 [image10]: ./output_images/10_image_with_lane_masking.png "Final Image"
 [image11]: ./examples/color_fit_lines.jpg "Example Polyfit"
+[image12]: ./output_images/7_a_boundingbox_persp_transform.png "Bounding box"
+
+
 
 [//]: # (Video References)
 [video1]: ./videos/out_jittery_on_bridge.mp4 "No lane detection on bridge"
@@ -142,6 +145,10 @@ This resulted in the following source and destination points:
 | 1150,720      | 990 ,720   |
 | 170,720       | 290 ,720   |
 
+One thing that I had to keep in mind was that the src points need to be chose so that the lines are parallel. This is important for the perspective transform to do it's magic.
+The bounding box looks something like this:
+![alt text][image12]
+
 I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
 
 ![alt text][image7]
@@ -181,6 +188,7 @@ I verified that my perspective transform was working as expected by drawing the 
 #### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
 The final video looks like this:
+
 ![alt text][video4]
 
 The full video can be seen here:
@@ -221,7 +229,7 @@ The full video can be seen here:
 
 - I am keeping track of number of times that we lose track of the lanes. If we lose track of the lane for 5 consecutive frames, we go back to the sliding window for finding the fit.
 
--   Details are available in the code cell:
+-   Details are available in the code cell #32 / item 6:
 
 3) Improvement for other driving conditions.
 
