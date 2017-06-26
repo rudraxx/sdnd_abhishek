@@ -95,11 +95,6 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
           0, 0, 1, 0,
           0, 0, 0, 1;
 
-    // Q_in << 1, 0, 0, 0,
-    //         0, 1, 0, 0,
-    //         0, 0, 1000, 0,
-    //         0, 0, 0, 1000;
-
     // set the process covariance matrix Q
     Q_in <<  1/4*noise_ax, 0, 1/2*noise_ax, 0,
            0, 1/4*noise_ay, 0, 1/2*noise_ay,
@@ -124,7 +119,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
       x_in << term1,term2,0,0;      
 
-
+      // Initialize the ekf
       ekf_.Init(x_in, P_in, F_in, Hj_, R_radar_, Q_in);      
 
     }
@@ -140,10 +135,13 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       // std::cout << "Init via Lidar" << std::endl;
       x_in << measurement_pack.raw_measurements_[0],measurement_pack.raw_measurements_[1],0,0;      
 
+      // Initialize the ekf
       ekf_.Init(x_in, P_in, F_in, H_laser_, R_laser_, Q_in);      
 
     }
     previous_timestamp_ = measurement_pack.timestamp_;
+
+
 
     // done initializing, no need to predict or update
     is_initialized_ = true;
@@ -205,7 +203,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     Hj_ = tools.CalculateJacobian(ekf_.x_);
     // std::cout << "tools.CalculateJacobian(ekf_.x_) done" << std::endl;
 
-
+    // Need to set the H and R matrices every time because they are different depending on the type of sensor. 
     ekf_.Init(ekf_.x_, ekf_.P_, ekf_.F_, Hj_, R_radar_, ekf_.Q_);
     // std::cout << "Done ekf init again " << std::endl;
 
@@ -214,6 +212,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
   } else {
 
     // std::cout << "Entering ekf_.UpdateEKF in Lidar" << std::endl;
+    
 
     // Laser updates
     ekf_.Init(ekf_.x_, ekf_.P_, ekf_.F_, H_laser_, R_laser_, ekf_.Q_);

@@ -1,118 +1,105 @@
-# Extended Kalman Filter Project Starter Code
-Self-Driving Car Engineer Nanodegree Program
-
-In this project you will utilize a kalman filter to estimate the state of a moving object of interest with noisy lidar and radar measurements. Passing the project requires obtaining RMSE values that are lower that the tolerance outlined in the project rubric. 
-
-This project involves the Term 2 Simulator which can be downloaded [here](https://github.com/udacity/self-driving-car-sim/releases)
-
-This repository includes two files that can be used to set up and install [uWebSocketIO](https://github.com/uWebSockets/uWebSockets) for either Linux or Mac systems. For windows you can use either Docker, VMware, or even [Windows 10 Bash on Ubuntu](https://www.howtogeek.com/249966/how-to-install-and-use-the-linux-bash-shell-on-windows-10/) to install uWebSocketIO. 
-
-Once the install for uWebSocketIO is complete, the main program can be built and run by doing the following from the project top directory.
-
-1. mkdir build
-2. cd build
-3. cmake ..
-4. make
-5. ./ExtendedKF
-
-Note that the programs that need to be written to accomplish the project are src/FusionEKF.cpp, src/FusionEKF.h, kalman_filter.cpp, kalman_filter.h, tools.cpp, and tools.h
-
-The program main.cpp has already been filled out, but feel free to modify it.
-
-Here is the main protcol that main.cpp uses for uWebSocketIO in communicating with the simulator.
-
-
-INPUT: values provided by the simulator to the c++ program
-
-["sensor_measurement"] => the measurement that the simulator observed (either lidar or radar)
-
-
-OUTPUT: values provided by the c++ program to the simulator
-
-["estimate_x"] <= kalman filter estimated position x
-["estimate_y"] <= kalman filter estimated position y
-["rmse_x"]
-["rmse_y"]
-["rmse_vx"]
-["rmse_vy"]
-
+# Extended Kalman Filter
 ---
+## ** Implement Sensor Fusion for Radar and Lidar data in C++ ** ##
 
-## Other Important Dependencies
+The goals of this project are:
+* Implement predict/correct equations for Extended Kalman filter.
+* Compute Jacobian matrices and rmse error.
+* Use Eigen library for matrix operations.  
+* Validate estimator using Unity gaming engine simulator.  
 
-* cmake >= 3.5
-  * All OSes: [click here for installation instructions](https://cmake.org/install/)
-* make >= 4.1
-  * Linux: make is installed by default on most Linux distros
-  * Mac: [install Xcode command line tools to get make](https://developer.apple.com/xcode/features/)
-  * Windows: [Click here for installation instructions](http://gnuwin32.sourceforge.net/packages/make.htm)
-* gcc/g++ >= 5.4
-  * Linux: gcc / g++ is installed by default on most Linux distros
-  * Mac: same deal as make - [install Xcode command line tools](https://developer.apple.com/xcode/features/)
-  * Windows: recommend using [MinGW](http://www.mingw.org/)
+I have also added 2 sections at the bottom:
+* Lessons learnt.
+* What's next? How can we improve these results?
 
-## Basic Build Instructions
+Before jumping into the details, I'd like to show you how the end results look like.
+![alt text](./images/out.gif)
+As you notice, the ekf output is tracking the ground truth better than the individual lidar or radar measurements.
 
-1. Clone this repo.
-2. Make a build directory: `mkdir build && cd build`
-3. Compile: `cmake .. && make` 
-   * On windows, you may need to run: `cmake .. -G "Unix Makefiles" && make`
-4. Run it: `./ExtendedKF `
 
-## Editor Settings
+## Rubric Points
+Here I will consider the rubric points individually and describe how I have addressed each point in my implementation:
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+### Compiling
+The cmake and make files work. Was able to build and run the model.
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
+### Accuracy
+According to the rubric, the rmse values should be within a given range. I have tabulated my results with the target values.
 
-## Code Style
+|State Var| Target RMSE | Fusion EKF |Radar only| Lidar only|
+|---------|-------------|-----|----------|-----------|
+|px|0.11| 0.0974|0.2304|0.1473|
+|py|0.11| 0.0856|0.3480|0.1153|
+|vx|0.52| 0.4517|0.5841|0.6383|
+|vy|0.52| 0.4404|0.8054|0.5346|
 
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
+### Follows the correct algorithm
 
-## Generating Additional Data
+#### Your Sensor Fusion algorithm follows the general processing flow as taught in the preceding lessons.
 
-This is optional!
+The fusion algorithm follows the following steps:
+1) Acquires the measurement.
 
-If you'd like to generate your own radar and lidar data, see the
-[utilities repo](https://github.com/udacity/CarND-Mercedes-SF-Utilities) for
-Matlab scripts that can generate additional data.
+2) Determine if the data is coming from Lidar or Radar.
 
-## Project Instructions and Rubric
+3) Calcuate the time difference between current time and previous measurement.
 
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
+4) Based on the delta time, invoke the ```EKF::Predict``` function to get the a-priori estimate of the mean and covariance.
 
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project resources page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/382ebfd6-1d55-4487-84a5-b6a5a4ba1e47)
-for instructions and the project rubric.
+5) If the measurement came from lidar, call the ```EKF::Update``` function.
 
-## Hints!
+6) If the measurement came from radar, call the ```Tools::CalculateJacobian``` function to get the Hj matrix at current mean estimate, and then call the ```EKF::UpdateEKF``` function.
 
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
+7) Step 4/ Step 5 will update the new estimates.
 
-## Call for IDE Profiles Pull Requests
+If takes the current measurments and the  
 
-Help your fellow students!
+#### Your Kalman Filter algorithm handles the first measurements appropriately.
 
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to we ensure
-that students don't feel pressured to use one IDE or another.
+If the radar measurement comes in first, then the states px and py are initialized as :
 
-However! We'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
+```
+float term1 = measurement_pack.raw_measurements_[0] * cos(measurement_pack.raw_measurements_[1]);
+float term2 = measurement_pack.raw_measurements_[0] * sin(measurement_pack.raw_measurements_[1]);
 
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
+```
 
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
+#### Your Kalman Filter algorithm first predicts then updates.
 
-Regardless of the IDE used, every submitted project must
-still be compilable with cmake and make.
+If you notice in FusionEKF.cpp, line 185 calls the EKF::Predict function, followed by EKF::Update or EKF::UpdateEKF depending upon the input measurement type, which can be radar or lidar.
+
+
+### Code Efficiency
+Have tried to ensure that we don't have repeat calculations.
+
+For example, in the Tools::CalculateJacobian, we pre-compute some of the terms, so that we don't redo the calculations again and again.
+
+## Additional Section:
+### Lessons Learnt:
+1) During an intermediate step, I had forgotten to wrap the theta angle in between -pi to pi. As a result, my data for velocity at a particular place was going wildly incorrect.
+![alt text](./images/forgot_wrapping.png)
+
+If you notice, the position was getting all messed up because of incorrect velocity estimate.(Notice the off path green dots in the middle) For debugging, I recorded the measurements and estimates to a file using fstream class.
+
+Here is what one of the recorded lines in the file looked like:
+
+```time 1477010456650000 R 6.00513 3.19003 1.77637  end meas -4.99944 	 -8.11533 	 2.32463 	 -30.024``` 	 
+
+The second value after R is the measured angle, and the last value is the vy velocity. Comparing this line with data from previous time step helped me realize that I had forgotten the angle normalization. Once that was resolved, the EKF worked as expected.
+
+2) Sensor fusion provides better results than any individual sensor. As tabulated in the rmse table,
+
+
+|State Var| Target RMSE | Fusion EKF |Radar only| Lidar only|
+|---------|-------------|-----|----------|-----------|
+|px|0.11| 0.0974|0.2304|0.1473|
+|py|0.11| 0.0856|0.3480|0.1153|
+|vx|0.52| 0.4517|0.5841|0.6383|
+|vy|0.52| 0.4404|0.8054|0.5346|
+
+  we can see that the radar only and lidar only systems perform worse than the fusion system. So the overall system improves as compared to single sensor system.
+
+### What's next?
+1. **Faulty measurement handling:** It seems like the EKF is being triggered to run only when input measurements are received. But there are conditions where maybe the measurement data is faulty, and I want to discard that reading. That is currently not taken into account. I will be adding some code for checking the range of measurements and then discarding some if necessary.
+
+2. **Deterministic behavior:** The algorithm isn't running in a deterministic  fashion. Doesn't seem to be triggered periodically. I would want the algorithm to keep on estimating the position even if no measurement is received. The uncertainty might go up with passage of time, but the closed loop control system will still receive a new estimate as opposed to old one.

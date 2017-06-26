@@ -5,7 +5,13 @@
 #include "FusionEKF.h"
 #include "tools.h"
 
+#include <fstream>
+#include <string>
+
 using namespace std;
+
+// create log file
+std::ofstream logfile("mylog.txt");
 
 // for convenience
 using json = nlohmann::json;
@@ -76,6 +82,11 @@ int main()
           		meas_package.raw_measurements_ << px, py;
           		iss >> timestamp;
           		meas_package.timestamp_ = timestamp;
+              //abhishek
+              if (logfile.is_open()){
+                logfile << "time: "<< timestamp<< " L " << px << " " << py << " " << "dummy  " <<" " << " end meas ";
+              }
+
           } else if (sensor_type.compare("R") == 0) {
 
       	  		meas_package.sensor_type_ = MeasurementPackage::RADAR;
@@ -83,12 +94,19 @@ int main()
           		float ro;
       	  		float theta;
       	  		float ro_dot;
+              //float pi_div = 3.14;
           		iss >> ro;
           		iss >> theta;
           		iss >> ro_dot;
+              //theta = theta % pi_div;
+
           		meas_package.raw_measurements_ << ro,theta, ro_dot;
           		iss >> timestamp;
           		meas_package.timestamp_ = timestamp;
+              //abhishek
+              if (logfile.is_open()){
+                logfile << "time: "<< timestamp<< " R " << ro << " " << theta << " " << ro_dot <<" " << " end meas ";
+              }
           }
           float x_gt;
     	  float y_gt;
@@ -125,6 +143,13 @@ int main()
     	  estimations.push_back(estimate);
 
     	  VectorXd RMSE = tools.CalculateRMSE(estimations, ground_truth);
+
+        // abhishek code: Adding datalogging to debug ekf error.
+        if (logfile.is_open()){
+          logfile << p_x << " \t " << p_y << " \t " << v1 << " \t " << v2 << " \t " << std::endl;
+        }
+
+
 
           json msgJson;
           msgJson["estimate_x"] = p_x;
@@ -182,6 +207,9 @@ int main()
     return -1;
   }
   h.run();
+
+  logfile.close();
+
 }
 
 

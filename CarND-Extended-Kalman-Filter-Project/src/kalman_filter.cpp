@@ -67,8 +67,25 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
   hx_ << term1,term2,term3;
 
   // std::cout << "hx_ = " << hx_ << std::endl;
+  Eigen::VectorXd y_ = (z - hx_);
 
-  Eigen::VectorXd y_ = z - hx_;
+  // Ensure that the delta theta is in between [-pi,pi]
+
+  float in = y_(1);
+  float aa = 3.14;
+  float bb = -3.14;
+  float out;
+  if (in>aa){
+      out = in-6.28;
+  }
+  else if (in<bb){
+      out = in + 6.28;
+  }
+  else{
+      out = in;
+  }
+  y_(1) = out;
+
   Eigen::MatrixXd S_ = H_ * P_ * H_.transpose() + R_;
   Eigen::MatrixXd K_ = P_ * H_.transpose() * S_.inverse();
 
