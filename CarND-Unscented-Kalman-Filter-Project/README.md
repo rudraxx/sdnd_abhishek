@@ -1,81 +1,104 @@
-# Unscented Kalman Filter Project Starter Code
-Self-Driving Car Engineer Nanodegree Program
-
-In this project utilize an Unscented Kalman Filter to estimate the state of a moving object of interest with noisy lidar and radar measurements. Passing the project requires obtaining RMSE values that are lower that the tolerance outlined in the project reburic. 
-
-This project involves the Term 2 Simulator which can be downloaded [here](https://github.com/udacity/self-driving-car-sim/releases)
-
-This repository includes two files that can be used to set up and intall [uWebSocketIO](https://github.com/uWebSockets/uWebSockets) for either Linux or Mac systems. For windows you can use either Docker, VMware, or even [Windows 10 Bash on Ubuntu](https://www.howtogeek.com/249966/how-to-install-and-use-the-linux-bash-shell-on-windows-10/) to install uWebSocketIO. 
-
-Once the install for uWebSocketIO is complete, the main program can be built and ran by doing the following from the project top directory.
-
-1. mkdir build
-2. cd build
-3. cmake ..
-4. make
-5. ./UnscentedKF
-
-Note that the programs that need to be written to accomplish the project are src/ukf.cpp, src/ukf.h, tools.cpp, and tools.h
-
-The program main.cpp has already been filled out, but feel free to modify it.
-
-Here is the main protcol that main.cpp uses for uWebSocketIO in communicating with the simulator.
-
-
-INPUT: values provided by the simulator to the c++ program
-
-["sensor_measurement"] => the measurment that the simulator observed (either lidar or radar)
-
-
-OUTPUT: values provided by the c++ program to the simulator
-
-["estimate_x"] <= kalman filter estimated position x
-["estimate_y"] <= kalman filter estimated position y
-["rmse_x"]
-["rmse_y"]
-["rmse_vx"]
-["rmse_vy"]
-
+# Unscented Kalman Filter
 ---
+## Implement Unscented Kalman Filter for Radar and Lidar sensor fusion in C++ ##
 
-## Other Important Dependencies
+The goals of this project are:
+* Implement predict/correct equations for Unscented Kalman filter.
+* Compute sigma points using CTRV motion model.
+* Tune plant noise parameters and evaluate performance using Normalized Innovation Square (NIS).  
+* Validate estimator using Unity gaming engine simulator.  
 
-* cmake >= v3.5
-* make >= v4.1
-* gcc/g++ >= v5.4
+I have also added 2 sections at the bottom:
+* Lessons learnt.
+* What's next? How can we improve these results?
 
-## Basic Build Instructions
+Before jumping into the details, I'd like to show you how the end results look like.
+![alt text](./images/out.gif)
 
-1. Clone this repo.
-2. Make a build directory: `mkdir build && cd build`
-3. Compile: `cmake .. && make`
-4. Run it: `./UnscentedKF path/to/input.txt path/to/output.txt`. You can find
-   some sample inputs in 'data/'.
-    - eg. `./UnscentedKF ../data/obj_pose-laser-radar-synthetic-input.txt`
+As you notice, the ekf output is tracking the ground truth better than the individual lidar or radar measurements.
 
-## Editor Settings
+For recoring a gif on ubuntu 16.04, i used the byzanz package:
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+``` "byzanz-record --duration=15 --x=100 --y=100 --wid
+th=1000 --height=800 out.gif" ```
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
+## Rubric Points
+Here I will consider the rubric points individually and describe how I have addressed each point in my implementation:
 
-## Code Style
+### Compiling
+The cmake and make files work. Was able to build and run the model.
 
-Please stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html) as much as possible.
+### Accuracy
+According to the rubric, the rmse values should be within a given range. I have tabulated my results with the target values.
 
-## Generating Additional Data
+|State Var| Target RMSE | EKF |UKF|
+|---------|-------------|-----|---|
+|px|0.09| 0.0974|0.0713|
+|py|0.10| 0.0856|0.0818|
+|vx|0.40| 0.4517|0.3253|
+|vy|0.30| 0.4404|0.2105|
 
-This is optional!
+![alt text](./images/best_result.png)
+### Follows the correct algorithm
 
-If you'd like to generate your own radar and lidar data, see the
-[utilities repo](https://github.com/udacity/CarND-Mercedes-SF-Utilities) for
-Matlab scripts that can generate additional data.
+#### Your Sensor Fusion algorithm follows the general processing flow as taught in the preceding lessons.
 
-## Project Instructions and Rubric
+The fusion algorithm follows the following steps:
+1) Acquires the measurement.
 
-This information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/c3eb3583-17b2-4d83-abf7-d852ae1b9fff/concepts/f437b8b0-f2d8-43b0-9662-72ac4e4029c1)
-for instructions and the project rubric.
+2) Determine if the data is coming from Lidar or Radar.
+
+3) Calcuate the time difference between current time and previous measurement.
+
+4) Based on the delta time, invoke the ```UKF::Predict``` function which will be used to calculate sigma points for augmented states, predict new states based on the CTRV model and gaussian noise.
+5) Calculate the predicted mean and covariance of the predicted sigma points.  
+
+6) If the measurement came from lidar, call the ```UKF::UpdateLidar``` function, and ```UKF::UpdateRadar``` if the measurement came from radar.
+
+7) At the end of the measurment update, calculate the normalized innovation squared (NIS) to see if the process noise needs to be tuned.
+
+Lidar plot:
+![alt text](./images/lidar_nis_plot.png)
+Radar plot:
+![alt text](./images/radar_nis_plot.png)
+
+#### Your Kalman Filter algorithm handles the first measurements appropriately.
+
+If the radar measurement comes in first, then the states px and py are initialized as :
+
+```x_(0) = meas_package.raw_measurements_[0] * cos(meas_package.raw_measurements_[1]);
+x_(1) = meas_package.raw_measurements_[0] * sin(meas_package.raw_measurements_[1]);
+```
+
+#### Your Kalman Filter algorithm first predicts then updates.
+
+If you notice in ukf.cpp, line 138 calls the UKF::Prediction function, followed by UKF::UpdateLidar or UKF::UpdateRadar depending upon the input measurement type, which can be radar or lidar.
+
+
+### Code Efficiency
+Have tried to ensure that we don't have repeat calculations.
+
+Additional snapshots of the UKF in action:
+![alt text](./images/ukf.png)
+
+![alt text](./images/zoom_lidar_ukf_gtruth.png)
+
+
+## Additional Section:
+### Lessons Learnt:
+1) During an intermediate step, my code was hanging up after a few timesteps. In order to debug this, I used multiple ```std::cout``` and logging to text file using fstream library.
+
+The reason the code was hanging is that while calculating the P value at line 273 - 279, the P covariance matrix should be reinitialized to 0 for every new measurement. I didnt catch this because we don't do this for a regular linear kalman filter, nor did we have to do this for EKF. But this makes sense, since we are calculating the covariance matrix in a slightly different fashion. Lesson learnt!
+
+2) UKF result seem to be better than EKF al across the board. I'd however like to check how much extra computation power is needed. Not sure how to check that just yet for C++.
+
+|State Var| Target RMSE | EKF |UKF|
+|---------|-------------|-----|---|
+|px|0.09| 0.0974|0.0713|
+|py|0.10| 0.0856|0.0818|
+|vx|0.40| 0.4517|0.3253|
+|vy|0.30| 0.4404|0.2105|
+
+
+### What's next?
+1. I want to run a parameter sweep on the varius values. I tried doing this by setting up input arguments, and then using a loop in the main function. But I still have to manually put all this data in excel and visualize it. I plan to save multiple log files, and then use MATLAB for automating the whole proessing. Lets see how that goes!

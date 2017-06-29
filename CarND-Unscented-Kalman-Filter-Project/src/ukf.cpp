@@ -102,25 +102,25 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
       P_.fill(0.0);
       P_(0,0) = std_laspx_ * std_laspx_;
       P_(1,1) = std_laspy_ * std_laspy_;
-      P_(2,2) = 100.0;
-      P_(3,3) = 100.0;
-      P_(4,4) = 100.0;
+      P_(2,2) = 20.0;
+      P_(3,3) = 20.0;
+      P_(4,4) = 1.0;
       // std::cout << " laser piece done " << std::endl;
 
     }else{
       // initialize ukf states using radar measurements
       x_(0) = meas_package.raw_measurements_[0] * cos(meas_package.raw_measurements_[1]);
       x_(1) = meas_package.raw_measurements_[0] * sin(meas_package.raw_measurements_[1]);
-      x_(2) = 0.0 ;
-      x_(3) = 0.0;//meas_package.raw_measurements_[1] ;
+      x_(2) = meas_package.raw_measurements_[2] ;
+      x_(3) = meas_package.raw_measurements_[1];
       x_(4) = 0.0 ;
 
       P_.fill(0.0);
-      P_(0,0) = std_radr_ * std_radr_;
-      P_(1,1) = std_radr_ * std_radr_;
-      P_(2,2) = 100.0;
-      P_(3,3) = 100.0;//std_radphi_ * std_radphi_;
-      P_(4,4) = 100.0;
+      P_(0,0) = 10;//std_radr_ * std_radr_;
+      P_(1,1) = 10;//std_radr_ * std_radr_;
+      P_(2,2) = 10.0;
+      P_(3,3) = std_radphi_ * std_radphi_;
+      P_(4,4) = 1.0;
 
     }
     time_us_ = meas_package.timestamp_;
