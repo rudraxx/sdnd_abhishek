@@ -60,16 +60,22 @@ The fusion algorithm follows the following steps:
 7) At the end of the measurment update, calculate the normalized innovation squared (NIS) to see if the process noise needs to be tuned.
 
 Lidar plot:
+
 ![alt text](./images/lidar_nis_plot.png)
+
 Radar plot:
+
 ![alt text](./images/radar_nis_plot.png)
 
 #### Your Kalman Filter algorithm handles the first measurements appropriately.
 
 If the radar measurement comes in first, then the states px and py are initialized as :
 
-```x_(0) = meas_package.raw_measurements_[0] * cos(meas_package.raw_measurements_[1]);
+```
+x_(0) = meas_package.raw_measurements_[0] * cos(meas_package.raw_measurements_[1]);
+
 x_(1) = meas_package.raw_measurements_[0] * sin(meas_package.raw_measurements_[1]);
+
 ```
 
 #### Your Kalman Filter algorithm first predicts then updates.
