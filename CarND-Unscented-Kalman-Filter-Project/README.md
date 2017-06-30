@@ -17,10 +17,12 @@ Before jumping into the details, I'd like to show you how the end results look l
 
 As you notice, the ekf output is tracking the ground truth better than the individual lidar or radar measurements.
 
-For recoring a gif on ubuntu 16.04, i used the byzanz package:
+For recording a .gif on ubuntu 16.04, i used the byzanz package:
 
-``` "byzanz-record --duration=15 --x=100 --y=100 --wid
-th=1000 --height=800 out.gif" ```
+```
+"byzanz-record --duration=15 --x=100 --y=100 --width=1000 --height=800 out.gif"
+```
+
 
 ## Rubric Points
 Here I will consider the rubric points individually and describe how I have addressed each point in my implementation:
