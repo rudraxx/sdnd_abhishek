@@ -70,6 +70,17 @@ public:
   // nis scalar
   double nis_value;
 
+  // Radar measurement noise
+  MatrixXd R_radar_;
+
+  // Lidar measurement noise
+  MatrixXd R_lidar_;
+
+  // n_z_radar. Num of measurements
+  int n_z_radar_;
+  // n_z_lidar. Num of measurements
+  int n_z_lidar_;
+
   /**
    * Constructor
    */
