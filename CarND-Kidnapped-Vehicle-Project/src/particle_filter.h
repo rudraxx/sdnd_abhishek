@@ -37,7 +37,11 @@ class ParticleFilter {
 	// Vector of weights of all particles
 	std::vector<double> weights;
 
+	// default random generator for various tasks
+	std::default_random_engine generator;
+
 public:
+
 
 	// Set of current particles
 	std::vector<Particle> particles;
