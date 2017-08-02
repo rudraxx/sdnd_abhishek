@@ -242,7 +242,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 		// Step 4: Calculate propability of each measurement and find the total probability of given particle.
 		double probability = 1.0;
 		// Calculate the denominator ( sqrt(2pi) * sig_x * sig_y)
-		double denominator = sqrt(2*M_PI) * std_landmark[0] * std_landmark[1];
+		double denominator = 2*M_PI * std_landmark[0] * std_landmark[1];
 
 		// Get the correct values of mu_x and mu_y based on the associations.
 
