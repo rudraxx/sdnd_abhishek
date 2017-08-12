@@ -17,6 +17,7 @@ constexpr double pi() { return M_PI; }
 double deg2rad(double x) { return x * pi() / 180; }
 double rad2deg(double x) { return x * 180 / pi(); }
 
+double system_delay = 0.1; // seconds
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
 // else the empty string "" will be returned.
@@ -92,7 +93,15 @@ int main() {
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
 
-          // std::cout << "My ptsx is: "<< ptsx[0] <<std::endl;
+          double velocity = v*1.6*5/18;
+
+          // get current actuator values
+          double steer_value=j[1]["steering_angle"];
+          std::cout<< "steer_value: "<< steer_value << std::endl;
+
+          steer_value= -1*steer_value * deg2rad(25);
+          std::cout<< "steer sim value: "<< steer_value << std::endl;
+          double throttle_value=j[1]["throttle"];;
 
           /*
           * TODO: Calculate steering angle and throttle using MPC.
@@ -100,6 +109,16 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
+          double Lf = 2.67;
+          // Since there is a system delay, predict where the car will be after that delay:
+          px = px + velocity * cos(psi) * system_delay;
+          py = py + velocity * sin(psi) * system_delay;
+          psi = psi + (velocity/Lf) * steer_value * system_delay;
+          velocity = velocity + throttle_value * system_delay;
+
+          // Now do all the calculations for change of coordinates based on these new states
+
+
           std::vector<double> body_ptsx(ptsx.size());
           std::vector<double> body_ptsy(ptsx.size());
           // Change coordinates of all incoming waypoints from world to body.
@@ -135,20 +154,22 @@ int main() {
           // double ddx_fx = fit_coeffs[1] + 2*fit_coeffs[2]*px + 3*fit_coeffs[3]*px*px;
           // Since px=0, and psi=0
           double epsi = 0.0 - atan(fit_coeffs[1]);
-          // std::cout<< "epsi: "<< epsi <<std::endl;
+          std::cout<< "epsi: "<< epsi <<std::endl;
+          std::cout<< "cte: "<< cte <<std::endl;
 
           Eigen::VectorXd current_states(6);
-          current_states<< 0.0, 0.0, 0.0, v, cte, epsi;
+          current_states<< 0.0, 0.0, 0.0, velocity, cte, epsi;
 
           // Call the MPC solver.
-          // vector<double> actuator_cmds;
           auto results = mpc.Solve(current_states,fit_coeffs);
-
-          double steer_value;
-          double throttle_value;
+          // remember that these values were calculated for 100 millisec in future.
+          // By the time this command reaches the simulator, 100 mSec will pass, and the command will be applied at the right time.
 
           // Reverse sign of steer_value. simulator expects reverse.
-          steer_value = -1*results[0];
+          // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
+          // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
+
+          steer_value = -1*results[0]/deg2rad(25);
           throttle_value = results[1];
 
           //Display the waypoints/reference line
@@ -181,9 +202,7 @@ int main() {
           }
 
           json msgJson;
-          // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
-          // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-          msgJson["steering_angle"] = steer_value/deg2rad(25);
+          msgJson["steering_angle"] = steer_value;
           msgJson["throttle"] = throttle_value;
 
 
