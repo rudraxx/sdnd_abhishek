@@ -28,8 +28,8 @@ double ref_v = 30*1.6*5/18; // ref velocity in m/s
 // Lf was tuned until the the radius formed by the simulating the model
 // presented in the classroom matched the previous radius.
 //
-// This is the length from front to CoG that has a similar radius.
-const double Lf = 2.67;
+// // This is the length from front to CoG that has a similar radius.
+// const double Lf = 2.67;
 
 class FG_eval {
  public:
@@ -44,6 +44,7 @@ class FG_eval {
     // NOTE: You'll probably go back and forth between this function and
     // the Solver function below.
 
+    // Step 1: Specify the cost function for this optimization:
     // cost is stored in first element of fg vector
     fg[0] = 0;
     // Cost function
@@ -65,7 +66,11 @@ class FG_eval {
       fg[0] += 50*CppAD::pow(vars[a_start+t+1] - vars[a_start+t],2);
     }
 
-    // Initialize the constraints
+    // Step 2: Initialize the constraints for this iteration:
+    // NOTE: We will be setting up the constraint boundaries in the MPC::Solve function.
+    // Think of this as setting up the constraint equations themselves.
+
+    // Specify the init state constraints in the fg vector.
     fg[1+x_start] = vars[x_start];
     fg[1+y_start] = vars[y_start];
     fg[1+psi_start] = vars[psi_start];
@@ -73,7 +78,7 @@ class FG_eval {
     fg[1+cte_start] = vars[cte_start];
     fg[1+epsi_start] = vars[epsi_start];
 
-    // Initialize the remaining fg values
+    // Specify the remaining constraint equations/ fg values
     for (int t=1;t<N; t++){
       // psi, v, delta at time t-1, i.e prev timestep
       AD<double> x0     = vars[x_start+t-1];
@@ -106,9 +111,8 @@ class FG_eval {
       fg[1+cte_start+t]   = ctet  - (fx0 - y0 + (v0*CppAD::sin(epsi0)* dt));
       fg[1+epsi_start+t]  = epsit - (psi0 - psi_des + (v0/Lf) * delta0 * dt);
 
-
     }
-    // return;
+
   }
 };
 
@@ -123,6 +127,8 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   size_t i;
   typedef CPPAD_TESTVECTOR(double) Dvector;
 
+  // Step 1: Initialize the size of variables and constraints based on the prediction horizon.
+
   // TODO: Set the number of model variables (includes both states and inputs).
   // For example: If the state is a 4 element vector, the actuators is a 2
   // element vector and there are 10 timesteps. The number of variables is:
@@ -133,6 +139,11 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 
   // TODO: Set the number of constraints
   size_t n_constraints = 6*N;
+  // NOTE: 6 constraints for the init conditions, and 6*(N-1) constraints for the dynamic eqns constraints.
+  // Dynamic eqns constraints are (N-1) because if we have 2 time steps prediction horizon, the only constraints that come into effect are
+  // x(k+1) = A* x(k) + B*u(k), x(k+2) is beyond the prediction horizon.
+  // Which means that N is NOT the number of predicted states into the future, rather the current state, + N-1 predicted states.
+
   // std::cout<< "n_constraints=" << n_constraints<< std::endl;
 
   // Initial value of the independent variables.
@@ -155,8 +166,11 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   vars[v_start] = v;
   vars[cte_start] = cte;
   vars[epsi_start] = epsi;
-
   // std::cout<< "delta_start = "<< delta_start << std::endl;
+
+  // Step 2: Set the upper and lower bound for the various variables.
+  // For the states, let us assume they can take any value
+  // For the actuator commands, we can specify the min/ max of what the actuator is capable of doing.
   Dvector vars_lowerbound(n_vars);
   Dvector vars_upperbound(n_vars);
   // TODO: Set lower and upper limits for variables.
@@ -174,8 +188,13 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
     vars_upperbound[i] = 1.0;
   }
 
+  // Step 3: specify the bounds for the constraints.
+  // NOTE: For the first constraint, which is associated with init state, (see Note in Step 1):
+  // we want that to be the init value we specified in step 1. So min/max = init value for that state.
+  // The remaining constraints represent the constraints for dynamics. So, ( x(k+1) - (A*x(k) + B*u(k) ) = 0
+
   // Lower and upper limits for the constraints
-  // Should be 0 besides initial state.
+  // First, set all the constraints to 0, and then just modify the init state constraints.
   Dvector constraints_lowerbound(n_constraints);
   Dvector constraints_upperbound(n_constraints);
   for (i = 0; i < n_constraints; i++) {
@@ -201,6 +220,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   constraints_lowerbound[1+epsi_start] = vars[epsi_start];
   constraints_upperbound[1+epsi_start] = vars[epsi_start];
 
+  // Step 4: Create the fg_eval object. This is used for calling the nonlinear optimization.
   // object that computes objective and constraints
   FG_eval fg_eval(coeffs);
 

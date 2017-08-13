@@ -6,6 +6,10 @@
 
 using namespace std;
 
+// Specify some vehicle constants
+// This is the length from front to CoG that has a similar radius.
+const double Lf = 2.67;
+
 class MPC {
  public:
   MPC();

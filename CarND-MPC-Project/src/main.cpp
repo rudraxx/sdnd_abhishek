@@ -93,14 +93,15 @@ int main() {
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
 
+          // Convert veolcity from mph to m/s
           double velocity = v*1.6*5/18;
 
           // get current actuator values
           double steer_value=j[1]["steering_angle"];
-          std::cout<< "steer_value: "<< steer_value << std::endl;
+          // std::cout<< "steer_value: "<< steer_value << std::endl;
 
           steer_value= -1*steer_value * deg2rad(25);
-          std::cout<< "steer sim value: "<< steer_value << std::endl;
+          // std::cout<< "steer sim value: "<< steer_value << std::endl;
           double throttle_value=j[1]["throttle"];;
 
           /*
@@ -109,19 +110,21 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
-          double Lf = 2.67;
-          // Since there is a system delay, predict where the car will be after that delay:
+          // double Lf = 2.67;
+          // Step 1: Since there is a system delay, predict where the car will be after that delay:
+          // NOTE: We are recreating the input dela, i.e the time it takes for the actuators to
+          // act on the received command in real world. So the command we genrated will get applied to the
+          // vehicle after this delay.
           px = px + velocity * cos(psi) * system_delay;
           py = py + velocity * sin(psi) * system_delay;
           psi = psi + (velocity/Lf) * steer_value * system_delay;
           velocity = velocity + throttle_value * system_delay;
 
-          // Now do all the calculations for change of coordinates based on these new states
 
-
+          // Step 2:  Now that we have accounted for any potential delay,
+          // Change coordinates of all incoming waypoints from world to body.
           std::vector<double> body_ptsx(ptsx.size());
           std::vector<double> body_ptsy(ptsx.size());
-          // Change coordinates of all incoming waypoints from world to body.
           for (int i=0; i<ptsx.size(); i++){
             double new_x = ptsx[i] - px;
             double new_y = ptsy[i] - py;
@@ -132,8 +135,7 @@ int main() {
           }
 
 
-          // Calcuate the polyfit based on the x and y values
-          // Eigen::VectorXd fit_coeffs;
+          // Step 3: Fit a 3rd degree polynomial to get trajectory based on current body reference frame waypoints.
 
           // Convert the std::vector to Eigen::VectorXd,
           // since this is needed by the polyfit function
@@ -144,25 +146,29 @@ int main() {
 
           auto fit_coeffs = polyfit(eig_ptsx,eig_ptsy,3);
 
-          // Since we have done the change of coordinates, cte wil lbe evaluated at x=0;
+          // Step 4: Caculate the current cross track error, heading angle error and create the current state vector.
+          // NOTE: Since we have done the change of coordinates, cte wil lbe evaluated at x=0;
           // And for the heading error, the ego_psy value will be 0 degrees.
           // So the new state vector will be 0,0,0,v,cte,epsi
 
           // Calculate the cross track error
           double cte = polyeval(fit_coeffs,0.0);
+
           // Calculate the orientation error:
           // double ddx_fx = fit_coeffs[1] + 2*fit_coeffs[2]*px + 3*fit_coeffs[3]*px*px;
           // Since px=0, and psi=0
           double epsi = 0.0 - atan(fit_coeffs[1]);
-          std::cout<< "epsi: "<< epsi <<std::endl;
-          std::cout<< "cte: "<< cte <<std::endl;
+          // std::cout<< "epsi: "<< epsi <<std::endl;
+          // std::cout<< "cte: "<< cte <<std::endl;
 
           Eigen::VectorXd current_states(6);
           current_states<< 0.0, 0.0, 0.0, velocity, cte, epsi;
 
+          // Step 5: Cal the MPC Solver to get the new input commands and calculated trajectory
           // Call the MPC solver.
           auto results = mpc.Solve(current_states,fit_coeffs);
-          // remember that these values were calculated for 100 millisec in future.
+          // results format: steering, throttle, and (alternating predicted_x,predicted_y)
+          // NOTE: Remember that these values were calculated for 100 millisec in future.
           // By the time this command reaches the simulator, 100 mSec will pass, and the command will be applied at the right time.
 
           // Reverse sign of steer_value. simulator expects reverse.
@@ -172,13 +178,13 @@ int main() {
           steer_value = -1*results[0]/deg2rad(25);
           throttle_value = results[1];
 
-          //Display the waypoints/reference line
+          // Step 6: Display the waypoints/reference line
           vector<double> next_x_vals;
           vector<double> next_y_vals;
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
           // We have the polyfit coeffs already. So lets use that to build up a reference trajectory
-          double delta_dist = 3;
+          double delta_dist = 2;
           int num_points = 25; // Lets see the path for 50 meters ahead of us.
           for (int i =1;i<num_points; i++){
             double curr_x = 0.0 + i*delta_dist;
@@ -187,7 +193,7 @@ int main() {
 
           }
 
-          //Display the MPC predicted trajectory
+          // Step 7: Display the MPC predicted trajectory
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
@@ -225,7 +231,8 @@ int main() {
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-          this_thread::sleep_for(chrono::milliseconds(100));
+          int sleep_millis = system_delay * 1000;
+          this_thread::sleep_for(chrono::milliseconds(sleep_millis));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {
