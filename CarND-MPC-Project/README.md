@@ -10,7 +10,10 @@ For details on dependencies and stuff to install, see the README_old.md
 ### Compilation
 The compilation works with cmake and make commands. Here is a video of the MPC in action:
 
-![MPC video](./images/out.gif)
+![MPC screenshot](./images/mpc_in_action.png)
+
+I had a video recording, but the repo was becoming too large, so couldn't add here. I will upload that to youtube and add a link here.
+
 
 ### Implementation
 #### The model
