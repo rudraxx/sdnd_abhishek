@@ -70,8 +70,6 @@ void Maneuver::calculate_stddev(){
 
         for (int j=0;j<numFeatures; ++j){
 
-//            double tempvar = pow( (new_vec[j] - mean_values[0][j]),2) / numObservations;
-
             sigma_values[j] += pow( (new_vec[j] - mean_values[j]),2) / numObservations;
         }
     }

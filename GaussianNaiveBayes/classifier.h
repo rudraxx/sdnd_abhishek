@@ -23,15 +23,6 @@ class GNB
         vector < vector<double> > mean_values;
         vector < vector<double> > sigma_values;
 
-
-//        vector<double> mean_left;
-//        vector<double> mean_keep;
-//        vector<double> mean_right;
-//
-//        vector<double> std_left;
-//        vector<double> std_keep;
-//        vector<double> std_right;
-
         GNB();
         virtual ~GNB();
 

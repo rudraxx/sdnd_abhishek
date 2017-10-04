@@ -6,8 +6,8 @@
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
-size_t N = 20;
-double dt = 0.05;
+size_t N = 10;
+double dt = 0.1;
 // specify the starting index for various vars.
 int x_start     = 0*N;
 int y_start     = 1*N;
@@ -18,7 +18,7 @@ int epsi_start  = 5*N;
 int delta_start = 6*N;
 int a_start     = 6*N + 1*(N-1);
 
-double ref_v = 30*1.6*5/18; // ref velocity in m/s
+double ref_v = 50*1.6*5/18; // ref velocity in m/s
 // This value assumes the model presented in the classroom is used.
 //
 // It was obtained by measuring the radius formed by running the vehicle in the
@@ -50,21 +50,38 @@ class FG_eval {
     // Cost function
     // Add cost associated with states cte, and epsi
     for (int t = 0; t<N; t++){
-      fg[0] += 100*CppAD::pow(vars[cte_start+t],2);
-      fg[0] += 100*CppAD::pow(vars[epsi_start+t],2);
-      fg[0] += 1*CppAD::pow(vars[v_start+t]-ref_v,2);
+      fg[0] += (1.0/2.25)*900*CppAD::pow(vars[cte_start+t],2);
+      fg[0] += (1.0/0.5625)*300*CppAD::pow(vars[epsi_start+t],2);
+      fg[0] += (1.0/625.0)*40*CppAD::pow(vars[v_start+t]-ref_v,2);
     }
 
     // Add cost associated with use of actuators
     for (int t=0; t<N-1; t++){
-      fg[0] += 2500*CppAD::pow(vars[delta_start+t],2);
-      fg[0] += 5*CppAD::pow(vars[a_start+t],2);
+      fg[0] += (1.0/0.16)*3*CppAD::pow(vars[delta_start+t],2);
+      fg[0] += (1.0/1.0)*2*CppAD::pow(vars[a_start+t],2);
     }
     // Add cost associated with change in actuator inputs
     for (int t = 0; t<N-2; t++) {
-      fg[0] += 2000*CppAD::pow(vars[delta_start+t+1] - vars[delta_start+t],2);
-      fg[0] += 50*CppAD::pow(vars[a_start+t+1] - vars[a_start+t],2);
+      fg[0] += (1.0/0.64)*3*CppAD::pow(vars[delta_start+t+1] - vars[delta_start+t],2);
+      fg[0] += (1.0/4)*4*CppAD::pow(vars[a_start+t+1] - vars[a_start+t],2);
     }
+
+    // for (int t = 0; t<N; t++){
+    //   fg[0] += 50*CppAD::pow(vars[cte_start+t],2);
+    //   fg[0] += 50*CppAD::pow(vars[epsi_start+t],2);
+    //   fg[0] += 0.25*CppAD::pow(vars[v_start+t]-ref_v,2);
+    // }
+    //
+    // // Add cost associated with use of actuators
+    // for (int t=0; t<N-1; t++){
+    //   fg[0] += 10*CppAD::pow(vars[delta_start+t],2);
+    //   fg[0] += 5*CppAD::pow(vars[a_start+t],2);
+    // }
+    // // Add cost associated with change in actuator inputs
+    // for (int t = 0; t<N-2; t++) {
+    //   fg[0] += 10*CppAD::pow(vars[delta_start+t+1] - vars[delta_start+t],2);
+    //   fg[0] += 10*CppAD::pow(vars[a_start+t+1] - vars[a_start+t],2);
+    // }
 
     // Step 2: Initialize the constraints for this iteration:
     // NOTE: We will be setting up the constraint boundaries in the MPC::Solve function.

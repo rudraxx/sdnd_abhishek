@@ -99,8 +99,9 @@ int main() {
           // get current actuator values
           double steer_value=j[1]["steering_angle"];
           // std::cout<< "steer_value: "<< steer_value << std::endl;
-
-          steer_value= -1*steer_value * deg2rad(25);
+          // Review notes: This value is in correct range, Don't need to scale it
+          // steer_value= -1*steer_value * deg2rad(25);
+          steer_value= -1*steer_value;
           // std::cout<< "steer sim value: "<< steer_value << std::endl;
           double throttle_value=j[1]["throttle"];;
 

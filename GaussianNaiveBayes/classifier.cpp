@@ -70,11 +70,6 @@ void GNB::train(vector<vector<double> > data, vector<string> labels){
 		labels - array of N labels
 		  - Each label is one of "left", "keep", or "right".
 	*/
-//	int numData = data.size();
-	// Create 4 new vectors to store individual class data
-//	vector<vector<double> > vector_left;
-//	vector<vector<double> > vector_keep;
-//	vector<vector<double> > vector_right;
 
     // Check if the input data is correct size
     if (labels.size() != data.size() ){
@@ -101,19 +96,6 @@ void GNB::train(vector<vector<double> > data, vector<string> labels){
     m_left.calculate_mean();
     m_keep.calculate_mean();
     m_right.calculate_mean();
-//	// Take mean of all the data
-//    for (std::size_t j=0;j<feature_size; ++j){
-//        mean_values[0][j]  /= numData;
-//        mean_values[1][j]  /= numData;
-//        mean_values[2][j]  /= numData;
-//    }
-
-//	// printing data for only mean_left
-//    for (unsigned int i=0;i<mean_left.size(); ++i){
-//        std::cout<< " Mean_left["<<i<<"]:  "<<mean_left[0][i]<< "  ";
-//	}
-//
-//	std::cout<<std::endl;
 
 	//
     // Calculate the std deviation
@@ -122,51 +104,6 @@ void GNB::train(vector<vector<double> > data, vector<string> labels){
     m_left.calculate_stddev();
     m_keep.calculate_stddev();
     m_right.calculate_stddev();
-    // Left data points
-    // Add the all the mean of square deviations
-//    for (unsigned int i=0;i<vector_left.size(); ++i){
-//        vector<double> new_vec = vector_left[i];
-//
-//        for (unsigned int j=0;j<feature_size; ++j){
-//            sigma_values[0][j] +=  pow( (new_vec[j] - mean_values[0][j]),2) / numData;
-//        }
-//    }
-//    // Calculate the sqrt of the msd
-//    for (unsigned int j=0;j<feature_size; ++j){
-//        std_left[j] =  sqrt(std_left[j]);
-//    }
-
-
-    // Keep data points
-    // Add the all the mean of square deviations
-//    for (unsigned int i=0;i<vector_keep.size(); ++i){
-//        vector<double> new_vec = vector_keep[i];
-//        for (int j=0;j<feature_size; ++j){
-//            std_keep[j] +=  pow( (new_vec[j] - mean_keep[j]),2) / numData;
-//        }
-//    }
-//    // Calculate the sqrt of the msd
-//    for (unsigned int j=0;j<feature_size; ++j){
-//        std_keep[j] =  sqrt(std_keep[j]);
-//    }
-//
-//    // Right data points
-//    // Add the all the mean of square deviations
-//    for (unsigned int i=0;i<vector_right.size(); ++i){
-//        vector<double> new_vec = vector_right[i];
-//        for (int j=0;j<feature_size; ++j){
-//            std_right[j] +=  pow( (new_vec[j] - mean_right[j]),2) / numData;
-//        }
-//    }
-//    // Calculate the sqrt of the msd
-//    for (unsigned int j=0;j<feature_size; ++j){
-//        std_right[j] =  sqrt(std_right[j]);
-//    }
-//
-//	// printing data for only mean_left
-//    for (unsigned int j=0;j<feature_size; ++j){
-//        std::cout<< " std_left["<<j<<"]:  "<<std_left[j]<< "  ";
-//	}
 
 	std::cout<<std::endl;
 

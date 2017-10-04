@@ -15,7 +15,6 @@ class Maneuver
         vector<vector<double> > vector_observations;
 
         Maneuver();
-//        Maneuver(const int features);
 
         virtual ~Maneuver();
 
