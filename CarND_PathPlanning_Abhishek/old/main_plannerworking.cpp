@@ -134,7 +134,7 @@ vector<double> getFrenet(double x, double y, double theta, const vector<double> 
 }
 
 // Transform from Frenet s,d coordinates to Cartesian x,y
-vector<double> getXY(double s, double d, const vector<double> &maps_s, const vector<double> &maps_x, const vector<double> &maps_y,const vector<double> &maps_dx,const vector<double> &maps_dy)
+vector<double> getXY(double s, double d, const vector<double> &maps_s, const vector<double> &maps_x, const vector<double> &maps_y)
 {
 	int prev_wp = -1;
 
@@ -162,21 +162,9 @@ vector<double> getXY(double s, double d, const vector<double> &maps_s, const vec
 }
 
 
-vector<vector<double> > generate_traj(int horizon,double car_s, double car_d, double ref_vel, double car_x,double car_y,double car_yaw,double lane, const vector<double> &map_waypoints_s, const vector<double> &map_waypoints_x, const vector<double> &map_waypoints_y,const vector<double> &previous_path_x,const vector<double> &previous_path_y, const vector<double> &map_waypoints_dx, const vector<double> &map_waypoints_dy){
+vector<vector<double> > generate_traj(int horizon,double car_s, double ref_vel, double car_x,double car_y,double car_yaw,double lane, const vector<double> &map_waypoints_s, const vector<double> &map_waypoints_x, const vector<double> &map_waypoints_y,const vector<double> &previous_path_x,const vector<double> &previous_path_y){
 
   int prev_size = previous_path_x.size();
-
-  // instead of taking all points, lets take only 25 points from the last rajectory.
-  // int const_num_points = 25;
-  // if (const_num_points<prev_size){
-  //   prev_size = const_num_points;
-  // }
-
-  // // avoid error for splines
-  // if(ref_vel<0.01){
-  //   ref_vel=0.1;
-  // }
-
 
   vector<double> ptsx;
   vector<double> ptsy;
@@ -185,7 +173,7 @@ vector<vector<double> > generate_traj(int horizon,double car_s, double car_d, do
   double ref_y = car_y;
   double ref_yaw = deg2rad(car_yaw);
 
-  // cout<< "in gen_traj lane = "<< lane << endl;
+  // cout<< ""<< endl;
 
   if(prev_size<2){
     double prev_car_x = car_x - cos(car_yaw);
@@ -217,10 +205,10 @@ vector<vector<double> > generate_traj(int horizon,double car_s, double car_d, do
   // Find the next 5 points 30 meters apart in the frenet coordinates. 
 
   for (int i = 0;i<3;++i){
-    vector<double> newwaypt = getXY(car_s+40*(i+1),(2+lane*4),map_waypoints_s,map_waypoints_x, map_waypoints_y,map_waypoints_dx,map_waypoints_dy);
+    vector<double> newwaypt = getXY(car_s+30*(i+1),(2+lane*4),map_waypoints_s,map_waypoints_x, map_waypoints_y);
 
-     ptsx.push_back(newwaypt[0]);
-     ptsy.push_back(newwaypt[1]);
+   ptsx.push_back(newwaypt[0]);
+   ptsy.push_back(newwaypt[1]);
 
   }
 
@@ -248,18 +236,18 @@ vector<vector<double> > generate_traj(int horizon,double car_s, double car_d, do
   vector<double> next_y_vals;
 
 
-  for(int i=0;i<prev_size;++i){
+  for(int i=0;i<previous_path_x.size();++i){
     next_x_vals.push_back(previous_path_x[i]);
     next_y_vals.push_back(previous_path_y[i]);
   }
   // calculate how to break up the spline data to get x,y pts.
-  double target_x = 50.0;
+  double target_x = 70.0;
   double target_y = s(target_x);
   double target_dist = sqrt(target_x*target_x + target_y*target_y);
 
   double x_add_on = 0;
 
-  for (int i=0;i<=horizon-prev_size; ++i){
+  for (int i=0;i<=horizon-previous_path_x.size(); ++i){
     
     double N = (target_dist/(0.02*ref_vel/2.24));
     double x_point = x_add_on + target_x/N;
@@ -287,7 +275,7 @@ vector<vector<double> > generate_traj(int horizon,double car_s, double car_d, do
   
   for (int i=0; i< next_x_vals.size(); ++i){
 
-    if (i<next_x_vals.size()-1){
+    if (i<next_x_vals.size()){
 
       double px1 = next_x_vals[i];
       double py1 = next_y_vals[i];
@@ -301,21 +289,16 @@ vector<vector<double> > generate_traj(int horizon,double car_s, double car_d, do
 
       next_s_data.push_back(sd_data_point[0]);
       next_d_data.push_back(sd_data_point[1]);
-      // cout<< "xval: " << px1 << " yval: " << py1 << " s val = "<<sd_data_point[0] << " d_val="<< sd_data_point[1]<<endl;
-
   }else{
           // use previous value.
       next_s_data.push_back(sd_data_point[0]);
       next_d_data.push_back(sd_data_point[1]);
   }
-
 }
   
 
   return {next_x_vals,next_y_vals,next_s_data,next_d_data};
 }
-
-
 
 
 
@@ -334,14 +317,12 @@ int main() {
   // The max s value before wrapping around the track back to 0
   double max_s = 6945.554;
 
+  int lane = 1;
   double ref_vel = 1;//10*2.24; // mph 
   int horizon = 50;
   double timestep = 0.02;
 
   // std::string current_state = "KL";
-  std::string target_state = "KL";
-  int target_lane = 1;
-
   double target_velocity = 40;
 
 
@@ -367,7 +348,7 @@ int main() {
   	map_waypoints_dy.push_back(d_y);
   }
 
-  h.onMessage([&target_state, &map_waypoints_dx,&map_waypoints_dy, &target_velocity,&timestep,&horizon, &target_lane,&ref_vel,&map_waypoints_x,&map_waypoints_y,&map_waypoints_s](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&target_velocity,&timestep,&horizon, &lane,&ref_vel,&map_waypoints_x,&map_waypoints_y,&map_waypoints_s](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -406,7 +387,45 @@ int main() {
 
           	json msgJson;
 
-//**** Obstacle calculations:
+            // abhishek code:
+            // int prev_size = previous_path_x.size();
+            // // Logic for preventing collision
+            // if (prev_size>0){
+            //   car_s = end_path_s;
+            // }
+            // bool too_close = false;
+            // // find ref_v to use
+            // for (int i=0;i<sensor_fusion.size();++i){
+
+            //   // car in my lane?
+            //   float d = sensor_fusion[i][6];
+            //   if(d> (2+4*lane - 2) && d< (2 + 4*lane + 2 ) ){
+            //     double vx = sensor_fusion[i][3];
+            //     double vy = sensor_fusion[i][4];
+            //     double check_speed = sqrt(vx*vx + vy*vy);
+            //     double check_car_s = sensor_fusion[i][5];
+
+            //     check_car_s += ((double)prev_size*0.02*check_speed);
+
+            //     // check s values greater than mine and s gap
+            //     if( (check_car_s>car_s) && (check_car_s-car_s)<30 ){
+
+            //       // just reducing or speed.
+            //       //ref_vel = 20;
+            //       too_close = true;
+            //     }
+            //   }
+            // }
+
+            // if(too_close){
+            //   if(lane>0){
+            //     lane =0;
+            //   }
+            //   ref_vel -= 0.224;
+            // }else if(ref_vel<48){
+            //   ref_vel += 0.224;
+            // }
+
             // create vector for all storing array_sd data for all objects. Storing data in frenet coordinates
             vector<vector<vector<double> > > obj_traj;
             cout<< "\n ************\n Step 1: Obstacle trajectories..." << std::endl;
@@ -464,19 +483,13 @@ int main() {
             vector<double> test_next_s_vals;
             vector<double> test_next_d_vals;
 
-            vector<int> target_lane_array;
 
-
-            vector<double> next_x_vals;
-            vector<double> next_y_vals;
-            vector<double> next_s_vals;
-            vector<double> next_d_vals;
 
 
             bool too_close = false;
             bool too_far_left = false;
             bool too_far_right = false;
-            int temp_lane= target_lane;
+            int temp_lane= lane;
 
             std::map<std::string,std::vector<string> > fsm_map;
             fsm_map["KL"] = {"KL","PLCL","PLCR"};
@@ -492,227 +505,170 @@ int main() {
             //   cout<< "fsm_map[KL]: "<< mystr[kk] << endl;
             // }
 
-
             //cout<< "Step 3: FSM evaluation..." << std::endl;
+            for (int i=0;i<fsm_states.size(); ++i) {
+            // for (int i=0;i<1; ++i){
+              
+              //cout<< "Current ego states:\n";
+              //cout<< "car_x: "<<car_x<<"car_y: "<<car_y<<"car_yaw: "<<car_yaw<< std::endl;              
+              // execute the potential state:
+              if (i==0){
+                cout<< "FSM Case 0...";
+                // cout<< "ref vel: " << ref_vel << endl;
+                temp_lane = lane + 0;
+                // cout<< "Evaluating for lane no. : "<< temp_lane << std::endl;
+                // next_xy_vals = generate_ego_trajectory(ego,horizon,temp_lane,map_waypoints_s,map_waypoints_x,map_waypoints_y,previous_path_x,previous_path_y,map_waypoints_dx,map_waypoints_dy);
 
-            // Check if the maneuver is complete. If not, stay in the old state
-            bool maneuver_complete = false;
+              }
+              else if (i==1){ 
+                cout<< "FSM Case 1..." ;
+                // cout<< "ref vel: " << ref_vel << endl;
+                temp_lane = lane - 1;
+                // cout<< "Evaluating for lane no. : "<< temp_lane << std::endl;
+                // next_xy_vals = generate_ego_trajectory(ego,horizon,temp_lane,map_waypoints_s,map_waypoints_x,map_waypoints_y,previous_path_x,previous_path_y,map_waypoints_dx,map_waypoints_dy);
+              }
+              else{
+                cout<< "FSM Case 2..." ;
+                // cout<< "ref vel: " << ref_vel << endl;
+                temp_lane = lane + 1;
+                // cout<< "Evaluating for lane no. : "<< temp_lane << std::endl;
+                // next_xy_vals = generate_ego_trajectory(ego,horizon,temp_lane,map_waypoints_s,map_waypoints_x,map_waypoints_y,previous_path_x,previous_path_y,map_waypoints_dx,map_waypoints_dy);
+              }
 
-            if( fabs(car_d - (2+4*target_lane)) < 0.5){
-              maneuver_complete = true;
-              // current_state = "KL";
-            }
-
-            if ( maneuver_complete==true){
-
-              // Do the steps for KL state:
-              for (int i=0;i<fsm_states.size(); ++i) {
-              // for (int i=0;i<1; ++i){
-                
-                //cout<< "Current ego states:\n";
-                //cout<< "car_x: "<<car_x<<"car_y: "<<car_y<<"car_yaw: "<<car_yaw<< std::endl;              
-                // execute the potential state:
-                if (i==0){
-                  cout<< "FSM Case 0... KL"<<endl;
-                  // cout<< "ref vel: " << ref_vel << endl;
-                  temp_lane = target_lane + 0;
-                  // cout<< "Evaluating for lane no. : "<< temp_lane << std::endl;
-                  // next_xy_vals = generate_ego_trajectory(ego,horizon,temp_lane,map_waypoints_s,map_waypoints_x,map_waypoints_y,previous_path_x,previous_path_y,map_waypoints_dx,map_waypoints_dy);
-            
-                }
-                else if (i==1){ 
-                  cout<< "FSM Case 1...LCL"<<endl ;
-                  // cout<< "ref vel: " << ref_vel << endl;
-                  temp_lane = target_lane - 1;
-                  // cout<< "Evaluating for lane no. : "<< temp_lane << std::endl;
-                  // next_xy_vals = generate_ego_trajectory(ego,horizon,temp_lane,map_waypoints_s,map_waypoints_x,map_waypoints_y,previous_path_x,previous_path_y,map_waypoints_dx,map_waypoints_dy);
-                }
-                else{
-                  cout<< "FSM Case 2...LCR" <<endl;
-                  // cout<< "ref vel: " << ref_vel << endl;
-                  temp_lane = target_lane + 1;
-                  // cout<< "Evaluating for lane no. : "<< temp_lane << std::endl;
-                  // next_xy_vals = generate_ego_trajectory(ego,horizon,temp_lane,map_waypoints_s,map_waypoints_x,map_waypoints_y,previous_path_x,previous_path_y,map_waypoints_dx,map_waypoints_dy);
-                }
-
-                test_next_xy_vals = generate_traj(horizon,car_s,car_d,ref_vel,car_x,car_y,car_yaw,temp_lane,map_waypoints_s, map_waypoints_x, map_waypoints_y, previous_path_x,previous_path_y,map_waypoints_dx, map_waypoints_dy);
-
-                // Get the new calculated values for x,y,s,d trajectories              
-                test_next_x_vals = test_next_xy_vals[0];
-                test_next_y_vals = test_next_xy_vals[1];
-                test_next_s_vals = test_next_xy_vals[2];
-                test_next_d_vals = test_next_xy_vals[3];
-
-                // Assign all trajectories to a vector. Will be used later for choosing the lowest cost state 
-                next_array.push_back(test_next_xy_vals);
-
-                // Assign the targe lane for each state  
-                target_lane_array.push_back(temp_lane);
-
-
-  // *** Cost calculations:
-                // cout<< "Calculate costs..." << "Number of obstacles: "<<obj_traj.size()<< std::endl;
-
-                double cost = 0.0;
-
-                // calculate costs of hitting another vehicle
-                for (int j=0; j<obj_traj.size(); ++j){
-                  // Test if the ego vehicle trajectory collides with any of the obstacles
-                  vector<vector<double> > current_obstacle = obj_traj[j];
-                  for(int k=1;k<current_obstacle.size() ; ++k){
-                    // cout<< "current_obstacle[k][0] : "<<current_obstacle[k][0]<<", current_obstacle[k][1] : "<<current_obstacle[k][1];
-                    // cout<< ", next_x_vals[k] : "<< next_x_vals[k] << ", next_y_vals[k] : " << next_y_vals[k]<< std::endl;
-
-                    // double temp_theta =  atan2(next_y_vals[k]-next_y_vals[k-1], next_x_vals[k]-next_x_vals[k-1]);
-                    // vector<double> temp_sd_vals = getFrenet(next_x_vals[k],next_y_vals[k], temp_theta, map_waypoints_x,map_waypoints_y);
-                    // vector<double> temp_sd_vals = getFrenet(next_x_vals[k],next_y_vals[k], temp_theta, map_waypoints_x,map_waypoints_y);
-
-                    // obstacle  in my lane?
-                    if(current_obstacle[k][1]> (2+4*temp_lane - 2) && current_obstacle[k][1] < (2 + 4*temp_lane + 2) ){
-                      // distance less than some threshold;  
-                      if ( (current_obstacle[k][0]>test_next_s_vals[k]) && ( (current_obstacle[k][0]-test_next_s_vals[k]) < 30 ) ) {
-
-                    // if ( distance(current_obstacle[k][0],current_obstacle[k][1],next_x_vals[k],next_y_vals[k]) < 1){
-                        cost += 10; // cost of collision
-                        //cout<< "fsm: "<< i<<", Collision at timestep k = "<<k << " between ego and vehicle id: "<<j<<std::endl;
-                        // set the too close flag to true. THis will be used to decelerate the vehicle.  
-                          if(i==0){
-                            too_close = true;
-                          }
-                      } // distance loop
-                    } // in lane loop
-                  } // each timestep in traj
-                } //each obstacle
-
-                // cost of going off track
-                // cout<< "Calculate cost of going off track..."<<endl;
-
-                if( (2+ 4*temp_lane) >12 ){
-                  cost += 10000;
-                  cout<< "Far right. take action.."<< endl;
-                  too_far_right = true;
-                } 
-
-                if( (2 + 4*temp_lane) < 0 ){
-                  cost += 10000;
-                  cout<< "Far left. take action.."<< endl;
-                  too_far_left = true;
-                } 
-
-
-                // for (int m=1; m< test_next_x_vals.size(); ++m){
-                //   // cout<< "s val = "<<test_next_s_vals[0] << "d_val="<< test_next_d_vals[0]<<endl;
-
-                //   if(test_next_d_vals[m] <1 || test_next_d_vals[m] > 11){
-                //     // cout<< "Off track..."<<endl;
-                //     cost += 10000;
-
-                //     if(test_next_d_vals[m] <1){
-                //       cout<< "Far left. take action.."<< endl;
-                //       too_far_left = true;
-                //     }
-
-                //     if(test_next_d_vals[m] >11){
-                //       cout<< "Far right. take action.."<< endl;
-                //       too_far_right = true;
-                //     }
-
-                //   }
-                // }
-                // cout<< "After off track: "<< cost<< endl; 
-
-                // In general, prefer middle lane instead of changing lane, when cost for all 3 is the same.
-                if (temp_lane !=1){
-                  // Add nominal cost ~ 10 when we are considering any state other than KL.
-                  cost += 3;
-                }
-
-                // cost of overtaking when there is another vehicle in the lane
-                // FSM 1 : LCL ;  FSM 2: LCR
-
-                if (i==1 || i==2){
-                  for (int j=0; j<obj_traj.size(); ++j){
-                    // Test if there is another vehicle in the adjacent lane
-                    vector<vector<double> > current_obstacle = obj_traj[j];
-                    for(int k=1;k<current_obstacle.size() ; ++k){
-
-                      // obstacle s within range:   
-                      if ( fabs(current_obstacle[k][0]- test_next_s_vals[k]) < 20) {
-                        if (i==1){
-                          // For left lane change, check if there is a car in the left lane:
-                          if ( ( test_next_d_vals[k]-current_obstacle[k][1] < 5) && (test_next_d_vals[k]-current_obstacle[k][1] > 2) ){
-                            cost+= 20;
-                          } 
-
-                        } 
-                        else{
-                          // i==2
-                          if ( ( current_obstacle[k][1] - test_next_d_vals[k] < 5) && (current_obstacle[k][1] - test_next_d_vals[k] > 2) ) {
-                            cost+= 20;
-                          } 
-                        }
-                      } // obs within range loop
-                    } // each timestep in traj
-                  } // num obstacles
-                } // fsm 1 or 2
-
-
-
-                cout<< "\n cost for state "<< i<< " is : " << cost <<"\n"<< std::endl;
-
-
-                fsm_costs.push_back(cost);
-
-              } // fsm_states
-
-  // Best state selection
-
-              cout<< "Searching for best state..." << std::endl;
-
-              // // double min_cost = 9999999;
-              int min_cost_index = 0;
-
-              // // Find index of the smallest element
-              auto ptr_min_cost = std::min_element(std::begin(fsm_costs),std::end(fsm_costs));
-              min_cost_index = std::distance(fsm_costs.begin(),ptr_min_cost);
-
-
-              // vector<double> next_x_vals;
-              // vector<double> next_y_vals;
-              // vector<double> next_s_vals;
-              // vector<double> next_d_vals;
-              // int target_lane;
-
-              next_x_vals = next_array[min_cost_index][0];
-              next_y_vals = next_array[min_cost_index][1];
-              next_s_vals = next_array[min_cost_index][2];
-              next_d_vals = next_array[min_cost_index][3];
-
-              // Get the target lane
-              target_lane = target_lane_array[min_cost_index];
-
-              target_state = fsm_states[min_cost_index];
-              cout<< "Stable.. Target state: " << target_state  << ", Target lane: " << target_lane << "\n"<< endl;
-
-            } 
-
-            else{
-
-              // stay in the previous state.
-              // calculate trajectory based on the old lane.
-              test_next_xy_vals = generate_traj(horizon, car_s,car_d,ref_vel,car_x,car_y,car_yaw,target_lane,map_waypoints_s, map_waypoints_x, map_waypoints_y, previous_path_x,previous_path_y,map_waypoints_dx, map_waypoints_dy);
-
+              test_next_xy_vals = generate_traj(horizon, car_s,ref_vel,car_x,car_y,car_yaw,temp_lane,map_waypoints_s, map_waypoints_x, map_waypoints_y, previous_path_x,previous_path_y);
 
               // Get the new calculated values for x,y,s,d trajectories              
-              next_x_vals = test_next_xy_vals[0];
-              next_y_vals = test_next_xy_vals[1];
-              next_s_vals = test_next_xy_vals[2];
-              next_d_vals = test_next_xy_vals[3];
-              cout<< "In transition.. Target state: " << target_state  << ", Target lane: " << target_lane << "\n"<< endl;
+              test_next_x_vals = test_next_xy_vals[0];
+              test_next_y_vals = test_next_xy_vals[1];
+              test_next_s_vals = test_next_xy_vals[2];
+              test_next_d_vals = test_next_xy_vals[3];
+
+              // Assign all trajectories to a vector. Will be used later for choosing the lowest cost state 
+              next_array.push_back(test_next_xy_vals);  
+
+
+// *** Cost calculations:
+              // cout<< "Calculate costs..." << "Number of obstacles: "<<obj_traj.size()<< std::endl;
+
+              double cost = 0.0;
+
+              // calculate costs of hitting another vehicle
+              for (int j=0; j<obj_traj.size(); ++j){
+                // Test if the ego vehicle trajectory collides with any of the obstacles
+                vector<vector<double> > current_obstacle = obj_traj[j];
+                for(int k=1;k<current_obstacle.size() ; ++k){
+                  // cout<< "current_obstacle[k][0] : "<<current_obstacle[k][0]<<", current_obstacle[k][1] : "<<current_obstacle[k][1];
+                  // cout<< ", next_x_vals[k] : "<< next_x_vals[k] << ", next_y_vals[k] : " << next_y_vals[k]<< std::endl;
+
+                  // double temp_theta =  atan2(next_y_vals[k]-next_y_vals[k-1], next_x_vals[k]-next_x_vals[k-1]);
+                  // vector<double> temp_sd_vals = getFrenet(next_x_vals[k],next_y_vals[k], temp_theta, map_waypoints_x,map_waypoints_y);
+                  // vector<double> temp_sd_vals = getFrenet(next_x_vals[k],next_y_vals[k], temp_theta, map_waypoints_x,map_waypoints_y);
+
+                  // obstacle  in my lane?
+                  if(current_obstacle[k][1]> (2+4*temp_lane - 2) && current_obstacle[k][1] < (2 + 4*temp_lane + 2) ){
+                    // distance less than some threshold;  
+                    if ( (current_obstacle[k][0]>test_next_s_vals[k]) && ( (current_obstacle[k][0]-test_next_s_vals[k]) < 40 ) ) {
+
+                  // if ( distance(current_obstacle[k][0],current_obstacle[k][1],next_x_vals[k],next_y_vals[k]) < 1){
+                      cost += 10; // cost of collision
+                      //cout<< "fsm: "<< i<<", Collision at timestep k = "<<k << " between ego and vehicle id: "<<j<<std::endl;
+                      // set the too close flag to true. THis will be used to decelerate the vehicle.  
+                        if(i==0){
+                          too_close = true;
+                        }
+                    } // distance loop
+                  } // in lane loop
+                } // each timestep in traj
+              } //each obstacle
+
+              // cost of going off track
+              // cout<< "Calculate cost of going off track..."<<endl;
+              for (int m=1; m< test_next_x_vals.size(); ++m){
+                // cout<< "s val = "<<sd_vals[0] << "d_val="<< sd_vals[1]<<endl;
+
+                if(test_next_d_vals[m] <1 || test_next_d_vals[m] > 11){
+                  // cout<< "Off track..."<<endl;
+                  cost += 10000;
+
+                  if(test_next_d_vals[m] <1){
+                    cout<< "Far left. take action.."<< endl;
+                    too_far_left = true;
+                  }
+
+                  if(test_next_d_vals[m] >11){
+                    cout<< "Far right. take action.."<< endl;
+                    too_far_right = true;
+                  }
+
+                }
+              }
+
+              // In general, prefer middle lane instead of changing lane, when cost for all 3 is the same.
+              if (temp_lane !=1){
+                // Add nominal cost ~ 10 when we are considering any state other than KL.
+                cost += 3;
+              }
+
+              // cost of overtaking when there is another vehicle in the lane
+              // FSM 1 : LCL ;  FSM 2: LCR
+
+              if (i==1 || i==2){
+                for (int j=0; j<obj_traj.size(); ++j){
+                  // Test if there is another vehicle in the adjacent lane
+                  vector<vector<double> > current_obstacle = obj_traj[j];
+                  for(int k=1;k<current_obstacle.size() ; ++k){
+
+                    // obstacle s within range:   
+                    if ( fabs(current_obstacle[k][0]- test_next_s_vals[k]) < 15) {
+                      if (i==1){
+                        // For left lane change, check if there is a car in the left lane:
+                        if ( ( test_next_d_vals[k]-current_obstacle[k][1] < 5) && (test_next_d_vals[k]-current_obstacle[k][1] > 2) ){
+                          cost+= 7;
+                        } 
+
+                      } 
+                      else{
+                        // i==2
+                        if ( ( current_obstacle[k][1] - test_next_d_vals[k] < 5) && (current_obstacle[k][1] - test_next_d_vals[k] > 2) ) {
+                          cost+= 7;
+                        } 
+                      }
+                    } // obs within range loop
+                  } // each timestep in traj
+                } // num obstacles
+              } // fsm 1 or 2
+
+
+
+              cout<< "cost for state "<< i<< " is : " << cost <<"\n"<< std::endl;
+
+
+              fsm_costs.push_back(cost);
             }
 
+// Best state selection
 
+            cout<< "Searching for best state..." << std::endl;
 
+            // // double min_cost = 9999999;
+            int min_cost_index = 0;
+
+            // // Find index of the smallest element
+            auto ptr_min_cost = std::min_element(std::begin(fsm_costs),std::end(fsm_costs));
+            min_cost_index = std::distance(fsm_costs.begin(),ptr_min_cost);
+
+            string state = fsm_states[min_cost_index] ;
+            cout<< "chosen state: " <<state  <<"\n"<< endl;
+
+            vector<double> next_x_vals;
+            vector<double> next_y_vals;
+            vector<double> next_s_vals;
+            vector<double> next_d_vals;
+
+            next_x_vals = next_array[min_cost_index][0];
+            next_y_vals = next_array[min_cost_index][1];
+            next_s_vals = next_array[min_cost_index][2];
+            next_d_vals = next_array[min_cost_index][3];
 
             // // get data from the fsm1 array - Temporary, while cost is not being calculated.
             // next_x_vals = next_array[0][0];
@@ -723,8 +679,7 @@ int main() {
 // Controls
             // Update the commands based on the selected state:
             // For KL state, see if we should accelerate or decelerate
-            if (target_state == "KL"){
-
+            if (min_cost_index == 0){
               if (too_close == true){
                 ref_vel -= 0.224;
                 cout<< "Decelerating..."<< "ref_vel = " << ref_vel<<"\n"<< endl;
@@ -734,15 +689,23 @@ int main() {
                 cout<< "Accelerating..."<< "ref_vel = " << ref_vel<<"\n"<< endl;
               }
             }
-            // if( (min_cost_index == 1) || (too_far_right==true) ){
-            //   lane = target_lane;
-            // }
-            // if( (min_cost_index == 2) || (too_far_left==true) ){
-            //   lane = target_lane;
-            // }
+            if( (min_cost_index == 1) || (too_far_right==true) ){
+              lane -= 1;
+            }
+            if( (min_cost_index == 2) || (too_far_left==true) ){
+              lane += 1;
+            }
 
 
 // **********************************8
+
+            // vector<double> next_x_vals = next_xy_vals[0];
+            // vector<double> next_y_vals = next_xy_vals[1];
+
+
+
+
+////////************************
 
 
           	msgJson["next_x"] = next_x_vals;

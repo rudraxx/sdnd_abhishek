@@ -1,10 +1,68 @@
 # CarND-Path-Planning-Project
 Self-Driving Car Engineer Nanodegree Program
-   
+
+An epic marathon effort for more than 26 hours leading to a marathon drive (26.2 miles!)
+Mistakes were made, and corrected. This project has by far been the most frustrating, and eventually most satisfying of the Self-Driving course
+
+![alt text](./images/final.png)
+
+There are a lot of things that I learnt, and aspects of the code that need to be improved. I will mention those in the What's next section.
+
+## Main software pipeline:
+
+The core logic is structured  as follows:
+For each iteration:
+* **Prediction**
+  * Get the sensor fusion data, and predict trajectories for all objects/vehicle
+
+* **Behaviour**
+  * Based on the current state of the system, predict the trajectories for all subsequent states
+
+* **Cost calculation**
+Based on the vehicle trajectory and obstacle trajectories, calculate the following costs
+  * Cost of hitting another vehicle
+  * Cost of going of track
+  * Cost of not being in the center lane
+  * Cost of lane change when there is another vehicle in the target lane
+
+* **State selection**
+  * Based on the costs, calculate the state which has minimum cost.
+  * Ensure that the state change transition is complete before recalculating the new trajectories.
+  * While the state transition is ongoing, generate trajectories that enable that state change ( Lane Change Left or Lane Change Right)
+
+
+## Details
+
+* The main reason for getting sidetracked was the generation of trajectory.
+* I started out by trying to use s-d coordinates for full trajectory calculations. But for some reason i couldnt get that to work. That is still on the to do list
+
+* The trajectory generation in final result is based on the x-y reference frame as discussed in the Project walk through.
+
+* One important aspect is the use of splines for generating smooth piecewise curves. Depending on how fast you want the lane change to happen, the anchor waypoints need to be selected accordingly.
+* Closer anchor points, lead to sudden lane changes, which is bad from jerk perpective.
+
+![alt text](./images/final_with_console.png)
+![alt text](./images/topview.png)
+
+## Next Steps:
+
+Based on what I learnt, there area  lot of changes that I would like to do, but couldn't get to
+
+1) Create a vehicle class for tracking ego and obstacle motion.
+
+2) Create a behavior planner class. This will have the methods like evaluate trajectory, get new trajectory, get_xy and get_frenet methods
+
+3) Use Jerk minimized trajectories instead of splines for the trajectory generation. That will help with high speed lane changes. Current setup causes issues at higher speeds.
+
+4) Create class for fsm. This will be used for calculating all the state transitions, and next states etc.
+
+As of now, I have all the code in the main.cpp, because that is how I started off. But this isnt going to work as we start adding controls and MPC to the project. Since I need to move to the next project, I will have to submit this as is for the timebeing.
+
+
 ### Simulator.
 You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases).
 
-### Goals
+###
 In this project your goal is to safely navigate around a virtual highway with other traffic that is driving +-10 MPH of the 50 MPH speed limit. You will be provided the car's localization and sensor fusion data, there is also a sparse map list of waypoints around the highway. The car should try to go as close as possible to the 50 MPH speed limit, which means passing slower traffic when possible, note that other cars will try to change lanes too. The car should avoid hitting other cars at all cost as well as driving inside of the marked road lanes at all times, unless going from one lane to another. The car should be able to make one complete loop around the 6946m highway. Since the car is trying to go 50 MPH, it should take a little over 5 minutes to complete 1 loop. Also the car should not experience total acceleration over 10 m/s^2 and jerk that is greater than 50 m/s^3.
 
 #### The map of the highway is in data/highway_map.txt
@@ -38,13 +96,13 @@ Here is the data provided from the Simulator to the C++ Program
 #### Previous path data given to the Planner
 
 //Note: Return the previous list but with processed points removed, can be a nice tool to show how far along
-the path has processed since last time. 
+the path has processed since last time.
 
 ["previous_path_x"] The previous list of x points previously given to the simulator
 
 ["previous_path_y"] The previous list of y points previously given to the simulator
 
-#### Previous path's end s and d values 
+#### Previous path's end s and d values
 
 ["end_path_s"] The previous list's last point's frenet s value
 
@@ -52,7 +110,7 @@ the path has processed since last time.
 
 #### Sensor Fusion Data, a list of all other car's attributes on the same side of the road. (No Noise)
 
-["sensor_fusion"] A 2d vector of cars and then that car's [car's unique ID, car's x position in map coordinates, car's y position in map coordinates, car's x velocity in m/s, car's y velocity in m/s, car's s position in frenet coordinates, car's d position in frenet coordinates. 
+["sensor_fusion"] A 2d vector of cars and then that car's [car's unique ID, car's x position in map coordinates, car's y position in map coordinates, car's x velocity in m/s, car's y velocity in m/s, car's s position in frenet coordinates, car's d position in frenet coordinates.
 
 ## Details
 
@@ -82,7 +140,7 @@ A really helpful resource for doing this project and creating smooth trajectorie
   * Run either `install-mac.sh` or `install-ubuntu.sh`.
   * If you install from source, checkout to commit `e94b6e1`, i.e.
     ```
-    git clone https://github.com/uWebSockets/uWebSockets 
+    git clone https://github.com/uWebSockets/uWebSockets
     cd uWebSockets
     git checkout e94b6e1
     ```
@@ -137,4 +195,3 @@ still be compilable with cmake and make./
 
 ## How to write a README
 A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
-
